@@ -1,0 +1,39 @@
+# Binary files and executables
+*.exe
+*.dll
+*.so
+*.dylib
+*.bin
+
+# Malware samples (if storing locally)
+samples/
+*.sample
+*.virus
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS files
+Thumbs.db
+.DS_Store
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.Python
+
+# YARA compilation cache
+*.yar.o
+
+# Temporary files
+*.tmp
+*.temp
+/temp/
