@@ -19,13 +19,13 @@ yara-detection-rules/
 │   ├── ransomware/          # Ransomware behavior detection
 │   ├── webshells/           # Web shell detection (PHP, ASP, JSP)
 │   ├── persistence/         # Persistence mechanism detection
-│   ├── command_control/     # C2 and lateral movement detection
+│   ├── c2/                  # C2 and lateral movement detection
 │   └── README.md            # Rules documentation index
-├── docs/
-│   ├── INSTALLATION.md      # YARA installation guide
-│   ├── USAGE.md             # How to run and test rules
-│   └── MITRE_MAPPING.md     # MITRE ATT&CK reference
-├── samples/                 # Malware samples for testing (if applicable)
+├── screenshots/             # Proof-of-concept detection screenshots
+│   ├── ransomware/
+│   ├── webshells/
+│   ├── persistence/
+│   └── c2/
 ├── .gitignore
 ├── LICENSE
 └── README.md                # This file
@@ -68,83 +68,138 @@ yara -r rules/ransomware/ /path/to/file
 
 # Scan for webshells
 yara -r rules/webshells/ /path/to/directory/
+
+# Scan for persistence mechanisms
+yara -r rules/persistence/ /path/to/directory/
+
+# Scan for C2 indicators
+yara -r rules/c2/ /path/to/directory/
 ```
 
 ## 📊 Rule Categories
 
 ### 1. **Ransomware Detection** (`rules/ransomware/`)
+
 Detects common ransomware behaviors:
 - File encryption patterns
 - Registry modifications
 - Ransom note creation
 - Process termination (anti-forensics)
+- Volume serial number manipulation
 
 **MITRE ATT&CK Mappings:**
 - T1486 - Data Encrypted for Impact
 - T1565 - Data Manipulation
 - T1490 - Inhibit System Recovery
+- T1070 - Indicator Removal
+
+**Detection Screenshot:**
+![Ransomware Detection Test](./screenshots/ransomware/01-ransomware-detection-test.png)
+
+---
 
 ### 2. **Webshell Detection** (`rules/webshells/`)
-Identifies web-based shells:
+
+Identifies web-based shells across multiple languages:
 - PHP shells (common shells, obfuscation patterns)
-- ASP.NET shells
-- JSP shells
+- ASP.NET shells (ExecuteCommand, system calls)
+- JSP shells (reverse shells, command execution)
 - Cold Fusion shells
+- Multi-layer obfuscation detection
 
 **MITRE ATT&CK Mappings:**
 - T1190 - Exploit Public-Facing Application
 - T1505 - Server Software Component
 - T1569 - Service Execution
+- T1027 - Obfuscation or Encryption
+
+**Detection Screenshot:**
+![Webshell Detection Test](./screenshots/webshells/02-webshell-detection-test.png)
+
+---
 
 ### 3. **Persistence Mechanisms** (`rules/persistence/`)
+
 Detects installation and persistence techniques:
-- Scheduled tasks
-- Registry Run keys
-- Startup folder modifications
+- Scheduled task creation
+- Registry Run key modifications
+- Startup folder abuse
 - WMI event subscriptions
-- Cron jobs (Linux)
+- Service installations
+- Task scheduler abuse
 
 **MITRE ATT&CK Mappings:**
 - T1547 - Boot or Logon Autostart Execution
 - T1053 - Scheduled Task/Job
 - T1546 - Event Triggered Execution
+- T1569 - System Services
 
-### 4. **Command & Control** (`rules/command_control/`)
-Identifies C2 communication and lateral movement:
-- Known C2 frameworks (Cobalt Strike, Mimikatz)
-- Beacon traffic patterns
-- DNS tunneling indicators
-- Dynamic DNS services
+**Detection Screenshot:**
+![Persistence Detection Test](./screenshots/persistence/03-persistence-detection-test.png)
+
+---
+
+### 4. **Command & Control (C2) Detection** (`rules/c2/`)
+
+Identifies C2 communication and lateral movement patterns:
+- Cobalt Strike beacon indicators
+- Mimikatz execution patterns
+- DNS tunneling attempts
+- Dynamic DNS beacon activity
+- Metasploit Meterpreter signatures
+- Pass-the-hash lateral movement
+- Reverse shell patterns
 
 **MITRE ATT&CK Mappings:**
 - T1071 - Application Layer Protocol
 - T1008 - Fallback Channels
-- T1573 - Encrypted Channel
+- T1003 - OS Credential Dumping
+- T1570 - Lateral Tool Transfer
+- T1021 - Remote Service Session Initiation
 
-## 🔍 Rule Writing Standards
+**Detection Screenshot:**
+![C2 Detection Test](./screenshots/c2/04-c2-detection-test.png)
 
-Each rule follows this format:
+---
 
-```yara
-rule RuleName {
-    meta:
-        description = "What this rule detects"
-        author = "Leonardo Moutinho"
-        date = "2026-06-07"
-        mitre_att_ck = "T1234 - Technique Name"
-        severity = "high"
-    
-    strings:
-        $str1 = "pattern" nocase
-        $hex1 = { 4D 5A 90 00 }
-        $re1 = /regex_pattern/i
-    
-    condition:
-        all of them
-}
+## 🧪 Testing & Validation
+
+All rules have been tested and validated against:
+- **Benign system files** - Minimizing false positives
+- **Proof-of-concept malware samples** - Ensuring true positives
+- **Production environments** - Real-world applicability
+
+Each screenshot above demonstrates successful rule detection against test cases.
+
+## 🎯 Usage Examples
+
+### Quick Threat Hunting Query
+
+```bash
+# Hunt for ransomware indicators
+yara -r rules/ransomware/ /var/log /usr/bin /home
+
+# Find webshells on web server
+yara -r rules/webshells/ /var/www/html /srv/www
+
+# Detect persistence mechanisms
+yara -r rules/persistence/ C:\Windows C:\Program\ Files
+
+# Identify C2 indicators
+yara -r rules/c2/ /var/cache /tmp /usr/tmp
 ```
 
-## 🧪 Testing Rules
+### Integration with SIEM
+
+```bash
+# Export matches in JSON for SIEM ingestion
+yara -r rules/ -f json /path/to/scan > yara_matches.json
+
+# Parse and forward to Splunk/ELK
+cat yara_matches.json | your-siem-forwarder
+```
+
+## 📖 Advanced Usage
 
 ```bash
 # Dry run (show what would match without modifying)
@@ -155,14 +210,20 @@ yara -r rules/ -m /path/to/test/file
 
 # Print matched strings
 yara -r rules/ -s /path/to/test/file
+
+# Verbose mode (detailed output)
+yara -r rules/ -v /path/to/test/file
 ```
 
-## 📈 Validation
+## 📈 Rule Coverage Matrix
 
-All rules have been tested against:
-- Benign system files (false positive testing)
-- Known malware samples (true positive testing)
-- Live production environments
+| Category | Rules | MITRE Techniques | Testing Status |
+|----------|-------|-----------------|-----------------|
+| Ransomware | 5 | T1486, T1565, T1490, T1070 | ✅ Tested |
+| Webshells | 6 | T1190, T1505, T1569, T1027 | ✅ Tested |
+| Persistence | 6 | T1547, T1053, T1546, T1569 | ✅ Tested |
+| C2 | 7 | T1071, T1008, T1003, T1570, T1021 | ✅ Tested |
+| **Total** | **24** | **16+ Techniques** | **✅ Production Ready** |
 
 ## 🤝 Contributing
 
@@ -172,6 +233,7 @@ Contributions welcome! When submitting:
 3. Test against benign files for false positives
 4. Document the rule logic clearly
 5. Include detection rationale
+6. Add proof-of-concept screenshots if available
 
 ## 📚 Resources
 
@@ -194,4 +256,6 @@ MIT License - See LICENSE file for details
 ---
 
 **Last Updated:** June 2026  
-**Total Rules:** [Will be updated as rules are added]
+**Total Rules:** 24 production-ready detection rules  
+**Coverage:** 16+ MITRE ATT&CK techniques  
+**Status:** ✅ Ready for production deployment
